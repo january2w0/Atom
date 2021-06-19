@@ -8,6 +8,9 @@ import warnings
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 isTrue = False
+alpha = 0.4
+offset = 6
+txt_size = 0.7
 
 #1.얼굴 사진 찍기
 face_classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -40,12 +43,28 @@ while True:
     if face_extractor(frame) is not None:  #얼굴 감지 하여 얼굴만 가져오기
         count += 1
         countIs = 0
+        text = str(count)
+        textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
+
         face = cv2.resize(face_extractor(frame), (450, 450))  #얼굴 이미지 크기를 500x500으로 조정
+        face_cp = face
         face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)  #조정된 이미지를 흑백으로 변환
+        face_cp = cv2.cvtColor(face_cp, cv2.COLOR_BGR2GRAY)
+
         file_name_path = 'faces/user' + str(count) + '.jpg'  #faces폴더에 jpg파일로 저장  #ex > faces/user0.jpg   faces/user1.jpg ....
         cv2.imwrite(file_name_path, face)
 
-        cv2.putText(face, str(count), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)  #화면에 얼굴과 현재 저장 개수 표시
+        #격자 무늬 표시하기
+        cv2.line(face, (150, 0), (150, 450), (255, 255, 255), 1)
+        cv2.line(face, (300, 0), (300, 450), (255, 255, 255), 1)
+        cv2.line(face, (0, 150), (450, 150), (255, 255, 255), 1)
+        cv2.line(face, (0, 300), (450, 300), (255, 255, 255), 1)
+
+        cv2.rectangle(face, (20 - offset, 430 + offset), (20 + textSize[0][0] + offset, 430 - textSize[0][1] - offset), (0, 0, 0), -1)  #숫자 뒤 검은 박스 나타내기
+
+        face = cv2.addWeighted(face, alpha, face_cp, 1 - alpha, 0)
+
+        cv2.putText(face, text, (20, 430), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (255, 255, 255), 2)  #화면에 얼굴과 현재 저장 개수 표시
         cv2.imshow('Face Cropper', face)
     else:
         countIs += 1
@@ -105,11 +124,12 @@ print("")
 def face_detector(img, size = 0.5):
     global isTrue
     global frame_cp
+    global confidence
 
     alpha = 0.8
-    offset = 25
-    offset2 = 7
-    thickness = 2
+    offset = 10
+    offsetX = 25
+    offsetY = 2
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_classifier.detectMultiScale(gray, 1.3, 5)
@@ -118,18 +138,17 @@ def face_detector(img, size = 0.5):
         return img, []
 
     for (x, y, w, h) in faces:
-
         #얼굴 부위 표시하기
-        cv2.rectangle(img, (x + offset2, y + offset2), (x + w - offset2, y + h - offset2),(255, 255, 255), 1)
+        cv2.rectangle(img, (x + offset, y + offset), (x + w - offset, y + h - offset), (255, 255, 255), 1)
 
-        cv2.line(img, (x, y), (x + offset, y), (255, 255, 255), thickness)
-        cv2.line(img, (x, y), (x, y + offset), (255, 255, 255), thickness)
-        cv2.line(img, (x + w, y), (x + w - offset, y), (255, 255, 255), thickness)
-        cv2.line(img, (x + w, y), (x + w, y + offset), (255, 255, 255), thickness)
-        cv2.line(img, (x, y + h), (x + offset, y + h), (255, 255, 255), thickness)
-        cv2.line(img, (x, y + h), (x, y + h - offset), (255, 255, 255), thickness)
-        cv2.line(img, (x + w, y + h), (x + w - offset, y + h), (255, 255, 255), thickness)
-        cv2.line(img, (x + w, y + h), (x + w, y + h - offset), (255, 255, 255), thickness)
+        cv2.rectangle(img, (x, y), (x + offsetX, y + offsetY), (255, 255, 255), -1)
+        cv2.rectangle(img, (x, y), (x + offsetY, y + offsetX), (255, 255, 255), -1)
+        cv2.rectangle(img, (x + w, y), (x + w - offsetX, y + offsetY), (255, 255, 255), -1)
+        cv2.rectangle(img, (x + w, y), (x + w - offsetY, y + offsetX), (255, 255, 255), -1)
+        cv2.rectangle(img, (x, y + h), (x + offsetX, y + h - offsetY), (255, 255, 255), -1)
+        cv2.rectangle(img, (x, y + h), (x + offsetY, y + h - offsetX), (255, 255, 255), -1)
+        cv2.rectangle(img, (x + w, y + h), (x + w - offsetX, y + h - offsetY), (255, 255, 255), -1)
+        cv2.rectangle(img, (x + w, y + h), (x + w - offsetY, y + h - offsetX), (255, 255, 255), -1)
 
         roi = img[y: y + h, x: x + w]
         roi = cv2.resize(roi, (200, 200))
@@ -152,24 +171,33 @@ while True:
     ret, frame_cp = cap.read()  #카메라로 부터 사진 한장 읽기
     frame_cp = cv2.flip(frame_cp, +1)  #이미지 좌우반전
 
+    txt_size = 0.8
+
     image, face = face_detector(frame)  # 얼굴 검출 시도
     try:
         face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)  #검출된 사진을 흑백으로 변환
         result = model.predict(face)  #학습한 모델로 예측시도
 
         if result[1] < 500:  #result[1]은 신뢰도이고 0에 가까울수록 자신과 같다는 뜻이다.
-            confidence = int(100 * (1 - (result[1]) / 300))  #유사도 계산
+            confidence = int(100 * (1 - (result[1]) / 200) + 10)  #유사도 계산
             display_string = str(confidence) + '%'  # 유사도 화면에 표시
             isTrue = True
 
         if confidence > 85:  #85% 보다 크면 동일 인물로 간주해 UnLocked!
-            cv2.putText(image, "Unlocked", (250, 450), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            text = "Unlocked"
+            textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
+            cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (30, 255, 30), 2)
             cv2.imshow('Face Cropper', image)
         else:  #85% 이하면 타인.. Locked!!!
-            cv2.putText(image, "Locked", (250, 450), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            text = "Locked"
+            textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
+            cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (30, 30, 255), 2)
             cv2.imshow('Face Cropper', image)
+
     except:  #얼굴 검출 안됨
-        cv2.putText(image, "Face Not Found", (250, 450), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        text = "Face Not Found"
+        textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
+        cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (240, 240, 240), 2)
         cv2.imshow('Face Cropper', image)
         pass
 
