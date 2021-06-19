@@ -45,7 +45,7 @@ while True:
         file_name_path = 'faces/user' + str(count) + '.jpg'  #faces폴더에 jpg파일로 저장  #ex > faces/user0.jpg   faces/user1.jpg ....
         cv2.imwrite(file_name_path, face)
 
-        cv2.putText(face, str(count), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)  #화면에 얼굴과 현재 저장 개수 표시
+        cv2.putText(face, str(count), (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)  #화면에 얼굴과 현재 저장 개수 표시
         cv2.imshow('Face Cropper', face)
     else:
         countIs += 1
@@ -104,9 +104,11 @@ print("")
 #3.얼굴 인식
 def face_detector(img, size = 0.5):
     global isTrue
+    global frame_cp
 
-    offset = 30
-    offset2 = 6
+    alpha = 0.8
+    offset = 25
+    offset2 = 7
     thickness = 2
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -118,6 +120,8 @@ def face_detector(img, size = 0.5):
     for (x, y, w, h) in faces:
 
         #얼굴 부위 표시하기
+        cv2.rectangle(img, (x + offset2, y + offset2), (x + w - offset2, y + h - offset2),(255, 255, 255), 1)
+
         cv2.line(img, (x, y), (x + offset, y), (255, 255, 255), thickness)
         cv2.line(img, (x, y), (x, y + offset), (255, 255, 255), thickness)
         cv2.line(img, (x + w, y), (x + w - offset, y), (255, 255, 255), thickness)
@@ -127,10 +131,10 @@ def face_detector(img, size = 0.5):
         cv2.line(img, (x + w, y + h), (x + w - offset, y + h), (255, 255, 255), thickness)
         cv2.line(img, (x + w, y + h), (x + w, y + h - offset), (255, 255, 255), thickness)
 
-        cv2.rectangle(img, (x + offset2, y + offset2), (x + w - offset2, y + h - offset2),(255, 255, 255), 1)
-
         roi = img[y: y + h, x: x + w]
         roi = cv2.resize(roi, (200, 200))
+
+        img = cv2.addWeighted(img, alpha, frame_cp, 1 - alpha, 0)
 
         if isTrue:
             cv2.putText(img, display_string, (x, y - 13), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
@@ -145,6 +149,9 @@ cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  #카메라 열기
 while True:
     ret, frame = cap.read()  #카메라로 부터 사진 한장 읽기
     frame = cv2.flip(frame, +1)  #이미지 좌우반전
+    ret, frame_cp = cap.read()  #카메라로 부터 사진 한장 읽기
+    frame_cp = cv2.flip(frame_cp, +1)  #이미지 좌우반전
+
     image, face = face_detector(frame)  # 얼굴 검출 시도
     try:
         face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)  #검출된 사진을 흑백으로 변환
