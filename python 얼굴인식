@@ -8,9 +8,10 @@ import warnings
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 isTrue = False
-alpha = 0.4
+isUnlocked = False
+alpha = 0.2
 offset = 6
-txt_size = 0.7
+txt_size = 0.65
 
 #1.얼굴 사진 찍기
 face_classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -126,8 +127,8 @@ def face_detector(img, size = 0.5):
     global frame_cp
     global confidence
 
-    alpha = 0.8
-    offset = 10
+    alpha = 0.75
+    offset = 9
     offsetX = 25
     offsetY = 2
 
@@ -183,7 +184,8 @@ while True:
             display_string = str(confidence) + '%'  # 유사도 화면에 표시
             isTrue = True
 
-        if confidence > 85:  #85% 보다 크면 동일 인물로 간주해 UnLocked!
+        if confidence > 85 or isUnlocked:  #85% 보다 크면 동일 인물로 간주해 UnLocked!
+            isUnlocked = True
             text = "Unlocked"
             textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
             cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (30, 255, 30), 2)
@@ -195,9 +197,10 @@ while True:
             cv2.imshow('Face Cropper', image)
 
     except:  #얼굴 검출 안됨
-        text = "Face Not Found"
+        text, color = "Face Not Found", (240, 240, 240)
+        if isUnlocked: text, color = "Unlocked", (30, 255, 30)
         textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
-        cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (240, 240, 240), 2)
+        cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, color, 2)
         cv2.imshow('Face Cropper', image)
         pass
 
@@ -208,6 +211,9 @@ while True:
         print("")
         print("Turn off the camera!")
         break
+
+    if keyboard.is_pressed('r'):
+        isUnlocked = False
 
 def removeAllFile(file_path):  #faces 폴더 내의 모든 파일 삭제
     if os.path.exists(file_path):
