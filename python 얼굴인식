@@ -1,19 +1,25 @@
+# $ git clone https://github.com/subhamroy021/Facial-Recognition.git
+# $ cd Faical_Recognition
+# $ mkdir faces
+
 import os
-import cv2
-import keyboard
+import cv2  #opencv 라이브러리
+import keyboard  #키보드 입력 감지 라이브러리
 import numpy as np
 from os import listdir
 from os.path import isfile, join
 import warnings
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
-isTrue = False
-isUnlocked = False
-alpha = 0.2
+
+#1.얼굴 사진 찍기
+
+isTrue = False  #유사도 계산이 완료되었는가
+isUnlocked = False  #잠금해제에 성공했는가
+alpha = 0.25
 offset = 6
 txt_size = 0.65
 
-#1.얼굴 사진 찍기
 face_classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 #전체 사진에서 얼굴 부위만 잘라 리턴
@@ -48,7 +54,7 @@ while True:
         textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
 
         face = cv2.resize(face_extractor(frame), (450, 450))  #얼굴 이미지 크기를 500x500으로 조정
-        face_cp = face
+        face_cp = face  #face의 복사본 생성
         face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)  #조정된 이미지를 흑백으로 변환
         face_cp = cv2.cvtColor(face_cp, cv2.COLOR_BGR2GRAY)
 
@@ -63,7 +69,7 @@ while True:
 
         cv2.rectangle(face, (20 - offset, 430 + offset), (20 + textSize[0][0] + offset, 430 - textSize[0][1] - offset), (0, 0, 0), -1)  #숫자 뒤 검은 박스 나타내기
 
-        face = cv2.addWeighted(face, alpha, face_cp, 1 - alpha, 0)
+        face = cv2.addWeighted(face, alpha, face_cp, 1 - alpha, 0)  #이미지 합성하기
 
         cv2.putText(face, text, (20, 430), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (255, 255, 255), 2)  #화면에 얼굴과 현재 저장 개수 표시
         cv2.imshow('Face Cropper', face)
@@ -73,7 +79,6 @@ while True:
             print("[INFO] Face not Found")
         else:
             countIs = 2
-        pass
 
     if cv2.waitKey(1) == 13 or count == 1000:
         break
@@ -88,7 +93,9 @@ print("")
 print("Colleting Samples Complete!!!")
 print("")
 
+
 #2.얼굴 학습
+
 data_path = 'faces/'
 onlyfiles = [f for f in listdir(data_path) if isfile(join(data_path, f))]  #faces폴더에 있는 파일 리스트 얻기
 Training_Data, Labels = [], []  #데이터와 매칭될 라벨 변수
@@ -121,7 +128,9 @@ print("")
 print("Model Training Complete!!!!!")
 print("")
 
+
 #3.얼굴 인식
+
 def face_detector(img, size = 0.5):
     global isTrue
     global frame_cp
@@ -186,23 +195,18 @@ while True:
 
         if confidence > 85 or isUnlocked:  #85% 보다 크면 동일 인물로 간주해 UnLocked!
             isUnlocked = True
-            text = "Unlocked"
-            textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
-            cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (30, 255, 30), 2)
-            cv2.imshow('Face Cropper', image)
+            text, color = "Unlocked", (30, 255, 30)
         else:  #85% 이하면 타인.. Locked!!!
-            text = "Locked"
-            textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
-            cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, (30, 30, 255), 2)
-            cv2.imshow('Face Cropper', image)
+            text, color = "Locked", (30, 30, 255)
 
     except:  #얼굴 검출 안됨
         text, color = "Face Not Found", (240, 240, 240)
         if isUnlocked: text, color = "Unlocked", (30, 255, 30)
-        textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
-        cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, color, 2)
-        cv2.imshow('Face Cropper', image)
         pass
+
+    textSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, txt_size, 2)  #문자열의 크기 알아내기
+    cv2.putText(image, text, (int((640 - textSize[0][0]) / 2), 450), cv2.FONT_HERSHEY_SIMPLEX, txt_size, color, 2)  #화면 중앙에 텍스트 삽입
+    cv2.imshow('Face Cropper', image)
 
     if cv2.waitKey(1) == 13:
         break
