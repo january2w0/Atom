@@ -112,7 +112,7 @@ for i, files in enumerate(onlyfiles):  #파일 개수 만큼 루프
    if images is None:  #이미지 파일이 아니거나 못 읽어 왔다면 무시
        continue
 
-    Training_Data.append(np.asarray(images, dtype = np.uint8))  #Training_Data 리스트에 이미지를 바이트 배열로 추가
+   Training_Data.append(np.asarray(images, dtype = np.uint8))  #Training_Data 리스트에 이미지를 바이트 배열로 추가
    Labels.append(i)  #Labels 리스트엔 카운트 번호 추가
    print("[Traning] user" + str(i + 1) + ".jpg")
 
