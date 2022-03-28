@@ -66,7 +66,7 @@ while True:
        cv2.line(face, (300, 0), (300, 450), (255, 255, 255), 1)
        cv2.line(face, (0, 150), (450, 150), (255, 255, 255), 1)
        cv2.line(face, (0, 300), (450, 300), (255, 255, 255), 1)
-       
+
        #숫자 뒤 검은 박스 나타내기
        cv2.rectangle(face, (20 - offset, 430 + offset), (20 + textSize[0][0] + offset, 430 - textSize[0][1] - offset), (0, 0, 0), -1)
 
@@ -234,3 +234,4 @@ removeAllFile(file_path)
 
 cap.release()
 cv2.destroyAllWindows()
+
